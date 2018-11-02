@@ -162,6 +162,7 @@ int read_config(){
   fgets(path2, 255, config_fp);
   path1[strlen(path1)-1] = '\0';
   path2[strlen(path2)-1] = '\0';
+  syslog(LOG_INFO, "Config was read");
   return 1;
 }
 
@@ -171,6 +172,8 @@ void do_task(char *dirname1, char *dirname2)
   DIR *dir;
   char buf[256];
   int len;
+  int fd1, fd2;
+  struct stat stbuf;
 
   //Remove all files in dirname2
   dir = opendir(dirname2);
@@ -178,6 +181,7 @@ void do_task(char *dirname1, char *dirname2)
   {
     sprintf(buf, "%s/%s", dirname2, d->d_name);
     remove(buf);
+    syslog(LOG_INFO, "Remove file %s in %s", d->d_name, dirname2);
   }
   closedir(dir);
 
@@ -193,8 +197,26 @@ void do_task(char *dirname1, char *dirname2)
 
     if(d->d_name[len-1] == 'k' && d->d_name[len-2] == 'b' && d->d_name[len-3] == '.')//Check for extension
     {
-      sprintf(buf,"cp %s/%s %s/", dirname1, d->d_name, dirname2);
-      system(buf);
+      sprintf(buf, "%s/%s", dirname1, d->d_name);
+      fd1 = open(buf, O_RDONLY);
+      if(fd1 < 0)
+      {
+        syslog(LOG_INFO, "Problems with reading file %s", buf);
+        continue;
+      }
+      sprintf(buf, "%s/%s", dirname2, d->d_name);
+      fd2 = open(buf, O_CREAT | O_WRONLY, 0600);
+      if(fd2 < 0)
+      {
+        syslog(LOG_INFO, "Problems with creating file %s", buf);
+        continue;
+      }
+      fstat(fd1, &stbuf);
+      sendfile(fd2, fd2, 0, stbuf.st_size);
+
+      close(fd1);
+      close(fd2);
+      syslog(LOG_INFO, "Copy file %s from %s to %s", d->d_name, dirname1, dirname2);
     }
   }
 
