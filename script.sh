@@ -15,6 +15,7 @@ touch dir2/file4
 
 touch dir3/file7
 
+echo "Test" > dir1/f1.bk
 echo "$PWD/dir1"> config
 echo "$PWD/dir2" >> config
 make

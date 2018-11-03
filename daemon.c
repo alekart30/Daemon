@@ -212,7 +212,7 @@ void do_task(char *dirname1, char *dirname2)
         continue;
       }
       fstat(fd1, &stbuf);
-      sendfile(fd2, fd2, 0, stbuf.st_size);
+      sendfile(fd2, fd1, 0, stbuf.st_size);
 
       close(fd1);
       close(fd2);
